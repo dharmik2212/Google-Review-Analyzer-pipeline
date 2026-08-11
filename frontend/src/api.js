@@ -1,4 +1,9 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+// Automatically normalize API_BASE (handles missing /api, trailing slashes, etc.)
+let rawBase = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api").trim().replace(/\/+$/, "");
+if (!rawBase.endsWith("/api")) {
+  rawBase += "/api";
+}
+const API_BASE = rawBase;
 
 
 /**
