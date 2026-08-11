@@ -29,20 +29,11 @@ _REVIEWS_CACHE = {}
 _CACHE_TTL_SECONDS = 3600  # 1 hour cache
 
 
-@router.get("/reviews")
-@router.get("/reviews/{data_id:path}")
-async def get_reviews(
-    data_id: str = Query(None, description="Place name, ID, or Google Maps URL"),
-    limit: int = Query(50, ge=1, le=100, description="Max reviews to fetch (default: 50 latest)"),
-    sort_by: str = Query("newest", description="Sort order: newest"),
-):
-    """
-    Fetch 50 latest Google Maps reviews for a place when user clicks to analyze.
-    Uses SerpAPI / Apify Actor kaix/google-maps-reviews-scraper and cardiffnlp/twitter-roberta-base-sentiment-latest model.
-    """
-    if not data_id or not data_id.strip():
+async def _fetch_and_analyze_reviews(data_id: str, limit: int = 50, sort_by: str = "newest"):
+    if not data_id or not str(data_id).strip():
         raise HTTPException(status_code=400, detail="Invalid data_id provided")
 
+    data_id = str(data_id).strip()
     max_target = min(limit, 50)
     cache_key = f"{data_id}|{max_target}|{sort_by}"
     now = time.time()
@@ -216,3 +207,29 @@ async def get_reviews(
 
     _REVIEWS_CACHE[cache_key] = (result_payload, now)
     return result_payload
+
+
+@router.get("/reviews")
+async def get_reviews_query(
+    data_id: str = Query(None, description="Place name, ID, or Google Maps URL"),
+    q: str = Query(None, description="Alternative query param for place name"),
+    limit: int = Query(50, ge=1, le=100, description="Max reviews to fetch (default: 50 latest)"),
+    sort_by: str = Query("newest", description="Sort order: newest"),
+):
+    """Fetch 50 latest Google Maps reviews via query parameter (/reviews?data_id=...)."""
+    target = data_id or q
+    if not target:
+        raise HTTPException(status_code=400, detail="Invalid data_id provided")
+    return await _fetch_and_analyze_reviews(target, limit, sort_by)
+
+
+@router.get("/reviews/{data_id:path}")
+async def get_reviews_path(
+    data_id: str,
+    limit: int = Query(50, ge=1, le=100, description="Max reviews to fetch (default: 50 latest)"),
+    sort_by: str = Query("newest", description="Sort order: newest"),
+):
+    """Fetch 50 latest Google Maps reviews via path parameter (/reviews/{data_id})."""
+    if not data_id:
+        raise HTTPException(status_code=400, detail="Invalid data_id provided")
+    return await _fetch_and_analyze_reviews(data_id, limit, sort_by)

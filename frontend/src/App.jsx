@@ -34,7 +34,8 @@ export default function App() {
   };
 
   const handlePlaceClick = async (place) => {
-    if (!place.data_id) {
+    const targetId = place.data_id || place.name || place.search_query;
+    if (!targetId) {
       setError('No place info available for this business.');
       return;
     }
@@ -43,7 +44,7 @@ export default function App() {
     setError('');
 
     try {
-      const result = await getReviewsWithSentiment(place.data_id, 50);
+      const result = await getReviewsWithSentiment(targetId, 50);
       setDashboardData(result);
     } catch (err) {
       setError(err.message);
