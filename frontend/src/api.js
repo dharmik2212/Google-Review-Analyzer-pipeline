@@ -28,7 +28,7 @@ export async function searchPlaces(query) {
  * @returns {Promise<{place_info: Object, reviews: Array, summary: Object, pagination: Object}>}
  */
 export async function getReviewsWithSentiment(dataId, limit = 50, sortBy = 'newest') {
-  const url = `${API_BASE}/reviews/${encodeURIComponent(dataId)}?limit=${limit}&sort_by=${encodeURIComponent(sortBy)}`;
+  const url = `${API_BASE}/reviews?data_id=${encodeURIComponent(dataId)}&limit=${limit}&sort_by=${encodeURIComponent(sortBy)}`;
   const res = await fetch(url);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Network error" }));
